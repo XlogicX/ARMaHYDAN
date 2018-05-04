@@ -110,6 +110,7 @@ sub process_file {
     $skipped_ops_level = 0;
     $stegcount = 0;
     $passes = 0;
+    $extraction = '';
         my $file;
         my $elftest;
         #If it's a file
@@ -173,6 +174,11 @@ sub process_file {
                     $skipped_ops_level_alt--;
                 }               
                 print "\nProcessing Instructions:\n" if defined $options{v};                
+            }
+        } else {
+            if (!(defined $options{l})) {
+                print "This argument only excpets a file (not a directory)\n";
+                exit;
             }
         }
 }
@@ -300,7 +306,7 @@ sub process_data {
             } else {
                 print "\t- It wouldn't be possible for $dsize bytes (from metadata) to fit in " . $storage /8 . " bytes (highest possible theoretical storage\n";
             }
-            if (($skipped_ops_level < 16) && ($skipped_ops_level > 0)) {     #This value is my best guess, need to profile system for more accurate value
+            if (($skipped_ops_level < 11) && ($skipped_ops_level > 0)) {
                 print "\t+ Metadata for 'data' instructions to avoid ($skipped_ops_level) is at a plausible level\n";
             } else {
                 print "\t- Metadata for 'data' instructions to avoid ($skipped_ops_level) not at a plausible level\n";
@@ -355,13 +361,19 @@ sub help {
 	print "\t-o: used for specifying an output file; the modified file\n";
 	print "\t-c: used to specify the 'cover' file; the program that data will be injected into. Note that the -i option will be our secret message and -o will be the the encoded output executable\n";
 	print "\t-e: an input executable to extract stego'd data out of. You must specify an output file with the -o option; this is the result file for the stego\n";
-	print "\t-l: Just list how may bytes can be shoved into an executable. Provide the executable to check with -i\n";
+	print "\t-l: List stats and steganalysis. Entire directories can be provided to -i (default recursive).\n";
 	print "\t-z: Reset the changable bits back to default/defined state for an executable. Needs -i and -o\n";
 	print "\t-r: Randomize the changable bits. Needs -i and -o\n";
-	print "\t-d: Detect if an executable has been stego'd or looks phishy in this way. Needs -i for the file to check\n";
 	print "\t-u: Make these changeable bits look as undefined as possible to a dissasembler (while still executing the same). Needs -i and -o\n";
+    print "\t-v: Shows more verbosity of internal steps gone through\n";
+    print "\t-h: Displays this listing\n";
 	print "EXAMPLES\n";
-	print "\tcoming soon\n";
+	print "\tUNDEFINE: ./ARMaHYDAN.pl -u -i input_program -o undefined_program\n";
+    print "\tRANDOM: ./ARMaHYDAN.pl -r -i input_program -o randomized_program\n";
+    print "\tRESET: ./ARMaHYDAN.pl -z -i input_program -o sanitized_program\n";
+    print "\tSTEGO (encode) and VERBOSE: ./ARMaHYDAN -c cover_program -i encoded_file -o output_program -v\n";
+    print "\tSTEGO (decode): ./ARMaHYDAN -e encoded_program -o secret_output\n";
+    print "\tSTEGANALYS/STATS: ./ARMaHYDAN -i mystery_program -l\n";
 	exit;
 }
 
@@ -992,7 +1004,6 @@ sub op_mul_A1 {
             $bin = $1 . $2 . "$random_bits[1]$random_bits[2]$random_bits[3]$random_bits[4]" . $4;
         }
         if ((defined $options{z}) && ($skipped_ops_level < 4)) { $bin = $1 . $2 . "0000" . $4; }
-        if ((defined $options{u}) && ($skipped_ops_level < 4)) { $bin = $1 . $2 . "0001" . $4; }
         return ($bin, 1);
     }
     return ($bin, 0);
@@ -1508,7 +1519,6 @@ sub op_cmp_reg_A1 {
             $bin = $1 . $2 . "$random_bits[1]$random_bits[2]$random_bits[3]$random_bits[4]" . $4;
         }
         if ((defined $options{z}) && ($skipped_ops_level < 14)) { $bin = $1 . $2 . "0000" . $4; }
-        if ((defined $options{u}) && ($skipped_ops_level < 14)) { $bin = $1 . $2 . "0001" . $4; }
         return ($bin, 1);
     }
     return ($bin, 0);
@@ -1710,7 +1720,6 @@ sub op_cmn_imm_A1 {
             $bin = $1 . $2 . "$random_bits[1]$random_bits[2]$random_bits[3]$random_bits[4]" . $4;
         }
         if ((defined $options{z}) && ($skipped_ops_level < 18)) { $bin = $1 . $2 . "0000" . $4; }
-        if ((defined $options{u}) && ($skipped_ops_level < 18)) { $bin = $1 . $2 . "0001" . $4; }
         return ($bin, 1);
     }
     return ($bin, 0);
@@ -1911,7 +1920,6 @@ sub op_cmp_imm_A1 {
             $bin = $1 . $2 . "$random_bits[1]$random_bits[2]$random_bits[3]$random_bits[4]" . $4; 
         }
         if ((defined $options{z}) && ($skipped_ops_level < 22)) { $bin = $1 . $2 . "0000" . $4; }
-        if ((defined $options{u}) && ($skipped_ops_level < 22)) { $bin = $1 . $2 . "0001" . $4; }
         return ($bin, 1);
     }
     return ($bin, 0);
@@ -2018,7 +2026,6 @@ sub op_qasx_A1 {
     }
     return ($bin, 0);
 }
-
 sub op_lsr_imm_A1 {
 #31|30|29|28|27|26|25|24|23|22|21|20|19|18|17|16|15|14|13|12|11|10|09|08|07|06|05|04|03|02|01|00
 #    cond   | 0  0| 0| 1  1  0  1| S|(0)(0)(0)(0)    Rd     |      imm5    | 0  1  0|    Rm
@@ -4035,7 +4042,6 @@ sub op_strexd_A1 {
     }
     return ($bin, 0);
 }
-
 sub op_strex_A1 {
 #31|30|29|28|27|26|25|24|23|22|21|20|19|18|17|16|15|14|13|12|11|10|09|08|07|06|05|04|03|02|01|00
 #   cond    | 0  0  0  1  1  0  0| 0|    Rn     |    Rd     |(1)(1)(1)(1) 1  0  0  1|    Rt
