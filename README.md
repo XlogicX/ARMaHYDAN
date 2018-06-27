@@ -29,6 +29,12 @@ CMP:<br>
 ```31|30|29|28|27|26|25|24|23|22|21|20|19|18|17|16|15|14|13|12|11|10|09|08|07|06|05|04|03|02|01|00```<br>
 ```___cond____|_0__0__0|_1__0__1__0|_1|____Rn_____|(0)(0)(0)(0)_____imm5_____|type_|_0|____Rm_____```<br>
 
+And not to get too off topic, but what would happen if we set the S bit to a '0' for CMP? I know, there's no assembly for that, becuase what's the point of a CMP that doesn't set the flags. In this case, You have to do it manually in machine code. Here's how objdump sees both versions (first valid, 2nd with S bit 0)<br>
+```e1500001 	cmp	r0, r1```<br>
+```e1400001 	cmp	r0, r1```<br>
+Though they looks the same, note that the 2nd version is stupid. It's stupid enough to give you a:<br>
+```Program terminated with signal SIGILL, Illegal instruction.```<br><br>
+
 ARMaHYDAN attempts to make clever use out of the fact that these bits are so moldable. Below are some of the use cases.<br>
 
 # UNDEFINING
