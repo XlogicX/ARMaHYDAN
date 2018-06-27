@@ -18,6 +18,16 @@ Some instructions have more than 4 optional bits. Some of the instructions have 
 ```31|30|29|28|27|26|25|24|23|22|21|20|19|18|17|16|15|14|13|12|11|10|09|08|07|06|05|04|03|02|01|00```<br>
 ```____cond___|_0__0__0__1__0|_0|_0__0|(1)(1)(1)(1)|___Rd_____|(0)(0)_0|(0)_0__0__0__0|(0)(0)(0)(0)```<br>
 
+I should also note that though undocumented, if you look closely to how instructions are encoded, there is some method to the madness. Comparing a SUBTRACT and COMPARE instruction illustrates this really well. Note that a CMP instruction does everything a subtract does, it just doesn't store the result of the subtraction. Based on the results of a SUB or CMP, some flags would be set (for this to actually occur for SUB, the 'S' bit would have to be set to a '1', it is a '1' by default with CMP). So comparing the instructions below: Bits 21-24 are the relevant bits indicating the instruction used, bit 24 is the only difference. In the case of these instructions, we are subtracting Rm from Rn, the result would go into Rd. This is where I take a step back to appreciate the elegance of ARM. The structure/encoding of these related instructions is incredibly similar. So similar in fact, that everything but bit 24 (difference between SUB/CMP) and optionally bit 20 is identical. There is just kind of a ghost for Rd in the CMP instruction. Note that these bits don't have to be 0's, they can be anything; as nothings getting written to Rd anyway.
+
+SUB:<br>
+```31|30|29|28|27|26|25|24|23|22|21|20|19|18|17|16|15|14|13|12|11|10|09|08|07|06|05|04|03|02|01|00```<br>
+```___cond____|_0__0__0|_0__0__1__0|_S|____Rn_____|____Rd_____|_____imm5_____|type_|_0|____Rm_____```<br><br>
+
+CMP:<br>
+```31|30|29|28|27|26|25|24|23|22|21|20|19|18|17|16|15|14|13|12|11|10|09|08|07|06|05|04|03|02|01|00```<br>
+```cond    | 0  0  0| 1  0  1  0| 1|    Rn     |(0)(0)(0)(0)     imm5     |type | 0|    Rm```<br>
+
 ARMaHYDAN attempts to make clever use out of the fact that these bits are so moldable. Below are some of the use cases.<br>
 
 # UNDEFINING
