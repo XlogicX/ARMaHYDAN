@@ -9,8 +9,8 @@ This instruction copies what is in register Rm and places it in the Rd register.
 MOV r0, r7<br>
 
 What is actually relevant for the purposes of this tool though is how this instruction is encoded; the 1's and 0's of it. Below is a crude ASCII-text table of what all 32 bits mean for this instruction:<br>
-```31|30|29|28|27|26|25|24|23|22|21|20|19|18|17|16|15|14|13|12|11|10|09|08|07|06|05|04|03|02|01|00```
-```      cond    | 0  0| 0| 1  1  0  1| S|(0)(0)(0)(0)    Rd     | 0  0  0  0  0  0  0  0|    Rm```
+```31|30|29|28|27|26|25|24|23|22|21|20|19|18|17|16|15|14|13|12|11|10|09|08|07|06|05|04|03|02|01|00```<br>
+```___cond____| 0  0| 0| 1  1  0  1| S|(0)(0)(0)(0)____Rd_____| 0  0  0  0  0  0  0  0|____Rm```<br>
 
 There are 4 bits for what condition to execute the instruction under (equal, greater than, unconditional, etc...). If the S bit is set, the condition flags can be written to. You will see Rd and Rm, these are the destination and source registers. You will also so a bunch of 1's and 0's that you can't change. It is somewhat of a simplification to say this, but these are the bits that make this instruction a MOV instruction like this. If you change these bits, it becomes a different instruction. However, the focus of this tool is regarding the bit's in the parenthesis; the 0 bits in bit 19-16. It would seem that these bits are 'optional' (undocumented). Changing these bits doesn't appear to change the operation of the instruction at all. A disassembler, however, will usually decode these instructions as UNDEFINED (even though they still execute with no issue).<br>
 
